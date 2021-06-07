@@ -7,9 +7,12 @@ static mut DEFINITION_LIST: BTreeMap<String, String> = BTreeMap::new();
 
 fn main() {
     let lines = DICTIONARY.lines();
-    collect(lines);
-    // let definition = get_definition(7630, lines);
-    // println!("\n\ndefinition: {}", definition);
+
+    // writing this shitty spaghetti code at 3:30 AM.. wtf is it doing I can't even tell if it works or not.
+    collect(lines.clone());
+
+    // let definition = get_definition(5023, lines);
+    // println!("\n\ndefinition: \"{}\"", definition);
 }
 
 fn collect(lines: Lines) {
@@ -44,14 +47,14 @@ fn collect(lines: Lines) {
                         }
                     };
 
-                    let w = word.to_string();
+                    let w = word.to_lowercase().to_string();
                     let definition = get_definition(current_line, lines.clone());
 
-                    unsafe {
-                        DEFINITION_LIST.insert(w, definition);
-                    };
+                    // println!("{}", w);
 
-                    // println!("{} - {}", word, definition);
+                    unsafe {
+                        DEFINITION_LIST.insert(w, definition.clone());
+                    };
                 };
             };
         };
@@ -86,6 +89,11 @@ fn get_definition<'a>(line: usize, lines: Lines) -> String {
             None => (),
         };
 
+        match check_for_letter(x, lines.clone(), current_line) {
+            Some(data) => return data,
+            None => (),
+        };
+
         if is_word(&x) {
             panic!("hit a word before a definition... {}, {}", current_line, x);
         };
@@ -94,11 +102,47 @@ fn get_definition<'a>(line: usize, lines: Lines) -> String {
     "Couldn't detect a definition".to_string()
 }
 
+fn check_for_letter(x: &str, lines: Lines, current_line: usize) -> Option<String> {
+    // println!("{}: \"{}\"", current_line, x);
+
+    if x.chars().nth(0) != Some('(') {
+        return None;
+    };
+
+    if (&x[0..3]) == "(a)" {
+        let mut x = (&x[4..x.chars().count()]).to_string();
+
+        if x.contains('.') {
+            x = x.split('.').nth(0).unwrap().to_string();
+            x = format!("{}.", x);
+
+            return Some(x);
+        } else {
+            // if it has no period iterate through the next lines.
+            for y in lines.clone().skip(current_line + 1) {
+                if y.contains('.') {
+                    let y = y.split('.').nth(0).unwrap().to_string();
+
+                    // println!("pushing {}", y);
+                    x.push_str(&format!(" {}.", y));
+
+                    return Some(x);
+                } else {
+                    // println!("pushing {}", y);
+                    x.push_str(&format!(" {}", y));
+                };
+            }
+        };
+    };
+
+    return None;
+}
+
 fn check_for_num(x: &str, lines: Lines, current_line: usize) -> Option<String> {
     // Check for number
-    if x.split('.').nth(0).unwrap() == "1" {
+    if x.split('.').nth(0) == Some("1") {
         // remove "1. " from the line
-        let mut x = (&x[3..x.len()]).to_string();
+        let mut x = (&x[3..x.chars().count()]).to_string();
 
         // check for a period in the line
         if x.contains('.') {
@@ -150,7 +194,7 @@ fn check_for_defn(x: &str, lines: Lines, current_line: usize) -> Option<String> 
     if split.nth(0).unwrap() == "Defn" {
         // println!("found a defn...");
         // remove "Defn: " from the line
-        let mut x = (&x[6..x.len()]).to_string();
+        let mut x = (&x[6..x.chars().count()]).to_string();
 
         // if the line has a period in it
         if x.contains('.') {
