@@ -1,15 +1,14 @@
 #[macro_use]
 extern crate lazy_static;
 
-// use once_cell::sync::Lazy;
 use std::collections::BTreeMap;
-use std::sync::RwLock;
 use std::sync::Mutex;
 
 const DICT: &'static str = include_str!("original.txt");
 
 lazy_static! {
     static ref DICT_MAP: Mutex<BTreeMap<String, String>> = Mutex::new(BTreeMap::new());
+    static ref WORDS_DONT_CONTAIN: Vec<&'static str> = vec!["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "(", ")", ":", ";", "[", "]", ".", ",", "|", " "];
 }
 
 
@@ -32,5 +31,13 @@ fn print_pretty_dict() {
 }
 
 fn check_line_is_word(line: &str) -> bool {
-    return true;
+    if line.to_uppercase() == line {
+        for bad_char in WORDS_DONT_CONTAIN.clone().into_iter() {
+            if !line.contains(bad_char) {
+                return true;
+            }
+        }
+    }
+
+    return false;
 }
